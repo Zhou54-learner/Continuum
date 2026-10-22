@@ -27,22 +27,24 @@ The first user-facing entry point can be a simple **CLI**. There is no need for 
 | Provenance | Each recalled memory shows revision, approval, recorded time, source ID and source status. Deleted source text is labeled removed, not reconstructed or invented. |
 | Correction vs time change | A corrected error is labeled false in history; a later real-world change preserves previously valid times. Conflicting unapproved facts do not silently replace the current assertion. |
 | Deletion | After restart and index rebuild, deleted content is absent from retrieval, revision history, source previews, export and retained context; it cannot be recreated by source processing. |
+| Two facts from one message | Save “I live in Shanghai. I like tea.” as two memories with exclusive, separate source excerpts. Delete the residence memory (and, in a separate test, its source): all residence revisions/excerpts disappear, while the tea memory and its evidence remain usable. Check all read paths and complete subsequent model input after restart. Evidence that cannot be separated must be one disclosed deletion unit. |
 | Persona switch | Different style; same user identity and stored facts. |
 | Authorization | Test owner/private, owner/public, guest, missing context and text impersonation. Inspect the **complete input received by the fake model** for absence of private content in denied cases. |
+| Processing destination | An owner/private request may inspect a local-only memory locally but must not send it to the cloud. An explicit grant permits only the configured provider/endpoint; a different or missing destination denies access. Inspect complete fake-model input, including sources and conversation history, with positive and negative cases. Switching destination after local recall must not leak the fact through an earlier assistant reply. Audience/requester restrictions still apply even with a destination grant. |
 | Identity spoofing | A message claiming "I am the owner" does not upgrade privileges. |
-| Persistence | Process restart preserves approved memories and stable owner/companion IDs. Replayed save requests do not produce duplicate active copies. |
+| Persistence | Process restart preserves approved memories and stable owner/companion IDs. Replayed save requests do not produce duplicate active copies; replaying the same request after deletion does not resurrect content. A new explicit save uses a new request ID. |
 | Model boundary | Memory data excludes provider response objects; simulated model failure does not undo a saved fact or create fictional completed actions. |
-
 | Export | JSON export parses with standard tools, carries schema version, stable IDs, revision/source metadata, and excludes deleted content, secrets and provider response objects. Import/restore is deferred. |
+| Local data hygiene | Default configuration, SQLite and its sidecars, caches and exports stay under ignored `.continuum/`. Verify root `data/`, `exports/` and `.env.local` are also ignored, while placeholder-only `.env.example` and synthetic `tests/fixtures/` remain trackable. No source text is duplicated into logs/event metadata. |
 | Chinese retrieval | From the first retrieval slice, test short names/places, paraphrases, no-answer, deleted, stale and denied memories. Before MVP completion, aim for >=18/20 answerable Chinese questions retrieving the right current fact in top 5 from about 30 synthetic memories; record misses and timing. |
 
 Use **synthetic fixtures**, not actual QQ/WeChat logs or personal profiles, in public tests. The Chinese target is a proposed project threshold, not an external benchmark. Check retrieval evidence and complete model input separately from generated answers.
 
 ## Suggested implementation order
 
-- **Step 0 — bootstrap (Issue #2, not product acceptance):** Minimal CLI, stable owner/companion IDs, editable persona, one LLM adapter, one real call and an offline fake-model smoke test.
-- **Step 1 — first product acceptance gate:** Explicit source-linked save → exit process → authorize and retrieve in a new process → send **only authorized** context to the model → show memory revision and source. Test synthetic public/guest denial and initial Chinese queries **in this step**.
-- **Step 2 — controlled lifecycle:** Targeted inspect/revise (correction vs time change), delete/source handling, JSON export, index/context non-resurrection checks, and persona independence.
+- **Step 0 — bootstrap (Issue #2, not product acceptance):** Minimal CLI, stable owner/companion IDs, editable persona, one LLM adapter, one real call and an offline fake-model smoke test. Keep runtime state under `.continuum/` and document what the configured model receives.
+- **Step 1 — first product acceptance gate:** Explicit source-linked save with exclusive excerpts and local-only default → exit process → authorize and retrieve in a new process → send **only authorized** context to the model → show memory revision and source. Test synthetic public/guest denial, processing-destination grants/denials and initial Chinese queries **in this step**.
+- **Step 2 — controlled lifecycle:** Targeted inspect/revise (correction vs time change), delete/source handling including two facts from one message, JSON export, replay/index/context non-resurrection checks, and persona independence.
 
 Split into small reviewable PRs if helpful. Every step updates its runnable instructions. Finishing Step 0 alone does **not** verify Continuum's central memory hypothesis.
 
