@@ -36,3 +36,17 @@ A concise log of choices that affect the architecture. **These are proposed init
 **Why:** Premature frameworks increase maintenance without improving the first vertical slice.
 
 **Revisit:** Whenever concrete duplication or testability problems emerge.
+
+## D-006 · Exclusive source excerpts in MVP
+**Choice:** Each memory revision owns one minimum source excerpt; only content-free origin references may be shared. Independently deletable facts need separable evidence; otherwise save one disclosed deletion unit. Deleting an excerpt cascades to its owning memory and all revisions/excerpts.
+
+**Why:** Sharing source text creates ambiguous cascading deletion, while copying full messages can retain deleted facts in another memory's evidence.
+
+**Revisit:** A real need for shared evidence or multiple independent sources, together with explicit redaction and deletion semantics.
+
+## D-007 · Local read permission is separate from model processing permission
+**Choice:** Memory defaults to local processing; cloud use requires an explicit per-memory grant for the configured provider/endpoint. Trusted request context carries the actual destination. All model-bound context, including sources and history, must satisfy that grant as well as requester/audience/purpose rules.
+
+**Why:** A private conversation with the owner does not by itself authorize transmission to any provider. A changed endpoint must not silently inherit access.
+
+**Revisit:** A second concrete destination or batch-grant workflow, preserving explicit permission and complete-input denial tests.

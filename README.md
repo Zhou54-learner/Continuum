@@ -38,6 +38,8 @@ A single-owner local prototype: converse through one entry point, persist source
 
 The repository is public: **never commit private conversation archives, API credentials, access tokens, or real identity mappings.** Local runtime data will remain untracked.
 
+The planned default runtime directory is `.continuum/` at the workspace root: local identity/persona configuration, `continuum.sqlite3` and its sidecars, caches, and `exports/` belong there. This directory, root-level `data/` and `exports/`, and `.env.*` files are ignored; `.env.example` may contain placeholders only. Public synthetic fixtures belong under `tests/fixtures/`. Custom data/export destinations need their own exclusion or should be outside the checkout. These are storage conventions for the forthcoming implementation, not a runnable setup.
+
 ## License
 
 [MIT](LICENSE). Dependencies and reused code retain their own license obligations.

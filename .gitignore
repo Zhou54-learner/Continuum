@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Continuum private runtime state (canonical root; includes SQLite sidecars)
+/.continuum/
+# Conventional local data/export paths are also private, not test fixtures.
+/data/
+/exports/
+.env.*
+!.env.example

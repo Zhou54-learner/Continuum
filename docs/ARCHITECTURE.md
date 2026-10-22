@@ -39,10 +39,13 @@ These are **logical boundaries**. Introduce code folders only when they contain 
 - **Companion:** stable AI instance ID, distinct from the owner person ID, chosen model, and editable persona revision. MVP has one companion.
 - **Account binding:** `platform + external_account_id -> person_id`, with verification method, status and timestamps. Session/channel IDs are not person IDs.
 - **Event:** observed interaction or action, with actor, source channel, timestamp and provenance. Retention can be limited; raw transcripts must not be kept forever by default.
-- **Memory:** source-linked approved claim/episode, with stable memory ID, revision and reason, subject, recorded time, optional fact-validity interval, approval/dispute/deletion state and visibility. Approval authorizes use, not objective truth.
+- **Memory:** source-linked approved claim/episode, with stable memory ID, revision and reason, subject, recorded time, optional fact-validity interval, approval/dispute/deletion state, visibility and allowed processing destinations. Approval authorizes use, not objective truth or unrestricted cloud transmission.
+- **Source excerpt:** minimum user-selected evidence, owned exclusively by one memory revision. A source ID identifies this retained excerpt; a separate content-free origin reference may identify the original message. It is not a shared transcript container.
 - **Persona revision:** versioned editable settings, stored separately from factual memories and operational permissions. MVP uses one authoritative local configuration.
 
 Relations, procedural memories, embeddings and time-aware graphs are future representations **only when queries justify them**. The persistent database is the source of truth; search indexes are rebuildable derivatives.
+
+The default runtime root is `.continuum/` in the workspace, containing local configuration, `continuum.sqlite3` (including journal/WAL/SHM sidecars), caches and `exports/`. It is ignored as a whole. Public synthetic fixtures live separately under `tests/fixtures/`; custom runtime paths must remain outside version control. Do not persist full source messages in event metadata, origin references or diagnostic logs as an alternative transcript store.
 
 ## 4. Memory lifecycle
 
@@ -50,7 +53,7 @@ Relations, procedural memories, embeddings and time-aware graphs are future repr
 2. Resolve the speaker to a known person/account binding or a separate unverified identity; never trust text saying "I am the owner".
 3. Create an **explicitly approved** memory from a user action. Automatic extraction/approval is not part of MVP; a later extractor may only propose candidates for review.
 4. Compare with current memories. Update validity/status and provenance; do not erase contradictory historical evidence without a correction policy.
-5. Memory filters all reads by trusted requester, audience and purpose **before** exposing content to Agent or the model; the same check applies to history, source preview and export.
+5. Memory filters all reads by trusted requester, audience, purpose and processing destination **before** exposing content to Agent or the model; the same check applies to history, source preview and export.
 6. Allow inspection, correction, export and deletion. Deletion must propagate to derived indexes and summaries; backups follow an explicit retention policy.
 
 ### Revision and truth-status rules
@@ -65,9 +68,12 @@ MVP corrections target a specific memory ID; no automatic semantic contradiction
 
 ### Withdrawal, deletion and provenance
 
+For MVP, each revision retains one exclusive source excerpt. Two independently deletable facts from one message require separate, sufficient excerpts that do not contain each other's fact; only content-free origin metadata may be shared. For example, from “I live in Shanghai. I like tea.” retain the two sentences separately. Do not copy the whole message into both records. If evidence cannot be separated without losing its meaning, save the facts as one explicitly identified deletion unit, or ask for separate statements. Do not invent a paraphrase and label it an original quote.
+
 - **Withdraw:** cease treating an assertion as current, while keeping clearly labeled owner-visible history.
 - **Delete memory:** remove memory and revision **content** from current reads, history, exports, derived indexes/summaries and retained context caches. Retained source text must not recreate the deleted memory in later rebuilds. A content-free tombstone (ID, time, deletion status) is permissible for non-resurrection.
-- **Delete source:** in MVP, deleting the sole source cascades to its dependent memory. Keep only minimum source evidence for each explicit save, not full transcripts by default. A memory deletion also removes the corresponding source text; metadata may honestly say “source content removed” without pretending the text remains auditable.
+- **Delete source:** in MVP, deleting a retained source excerpt cascades to its owning memory, all revisions and their excerpts. A memory deletion removes all of its exclusive source text in the same database transaction. Other memories that share only an origin reference remain intact. Content-free metadata may honestly say “source content removed” without pretending the text remains auditable.
+- **Deletion scope:** deletion targets a memory ID and all of its owned/derived content, not automatic semantic erasure of every independently saved assertion about the same topic. The command must make this scope clear. Replaying the original save request after deletion must not resurrect the memory; retain a content-free request identifier with the deletion marker. A genuinely new explicit save is a separate user action.
 - **Guarantee limits:** no app-managed backups in MVP; user exports and copies already transmitted to model providers are outside local deletion guarantees. SQLite logical deletion is not forensic secure erasure. Future restore/backup logic must respect deletion markers.
 
 Source content is **data**, not an instruction capable of overriding identity, persona, policy or tools.
@@ -78,7 +84,11 @@ Application constructs a **trusted request context** from actual entry-point aut
 
 **Memory owns the single authorization rule** for retrieval, inspection, revision history, source previews and exports. Agent only receives authorized content and cannot broaden access. The rule must also cover stored history snippets and future summaries; prompts alone cannot enforce this boundary.
 
-A local SQLite database does not imply local inference. If configured to use a cloud model, approved context is sent to that provider. The application must document the destination and transmitted categories of data; local deletion cannot retract requests already sent externally.
+For MVP, new memories default to local processing only. The owner can explicitly grant a memory access to the one configured cloud destination, identified by provider and endpoint; selecting a provider or approving a fact alone does not grant that access. Application supplies the actual destination from trusted adapter configuration, never from chat text or a caller-supplied label. Missing/unknown destinations deny memory access; a provider/endpoint change requires a matching grant. No destination registry or general-purpose policy engine is required.
+
+Local inspection/export uses an explicit local destination and still checks requester, audience and purpose. Model-bound reads additionally require a matching processing grant, including source excerpts and history. Context authorized for local display must not be reused as a cloud prompt. Rebuild/recheck model context when the destination changes, including prior assistant messages containing recalled facts; no fallback provider may inherit another destination's grant. Any future external embedding or reranking call must obey the same boundary before receiving content.
+
+A local SQLite database does not imply local inference. If configured to use a cloud model, only context permitted for that destination is sent to it. The application must document the destination and transmitted categories of data, including the current user message and persona settings as applicable; memory restrictions do not make the whole conversation local. Local deletion cannot retract requests already sent externally.
 
 - Owner-only knowledge is private by default. A known owner account does not grant every channel permission to reveal owner-only memory.
 - Third-party interactions may retain only necessary, purpose-limited context. Do not silently merge third-party accounts across platforms.
