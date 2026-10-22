@@ -14,7 +14,7 @@ A concise log of choices that affect the architecture. **These are proposed init
 
 **Why:** Fewer moving parts, simple inspectability, low migration cost at MVP scale.
 
-**Revisit:** Reproducible retrieval failures or observed concurrency limits.
+**Revisit:** Improve tokenization, ranking or **derived indexes** for poor retrieval (notably Chinese). Reconsider SQLite as primary storage only for observed write contention or deployment/concurrency requirements.
 
 ## D-003 · Persona ≠ Memory ≠ Permissions
 **Choice:** Editable personality is stored separately from user facts and authorization decisions.
